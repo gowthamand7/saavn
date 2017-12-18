@@ -1,0 +1,8 @@
+pyDes
+eyed3
+urllib3
+request
+pathlib
+requests
+pathvalidate
+mutagen
