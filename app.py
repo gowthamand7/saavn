@@ -4,7 +4,7 @@ import base64
 from mutagen.id3 import ID3
 from mutagen.id3 import ID3NoHeaderError
 from mutagen.id3._frames import TPE1, APIC
-from mutagen.mp4 import MP4, MP4Cover
+from mutagen.mp4 import MP4, MP4Cover, MP4Info
 from mutagen.easyid3 import EasyID3
 import json
 from pyDes import *
@@ -14,6 +14,7 @@ import urllib3.request
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import os
+import re
 
 # Pre Configurations
 urllib3.disable_warnings()
@@ -21,6 +22,12 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 unicode = str
 raw_input = input
 
+def parseHastags(json):
+    return_str = ''
+    hash = json['hashtags']
+    for tags in hash:
+        return_str += tags['title']+' '
+    return return_str
 
 def addtags(filename, json_data):
     try:
@@ -30,20 +37,18 @@ def addtags(filename, json_data):
         audio['\xa9alb'] = unicode(json_data['album'])
         audio['aART'] = unicode(json_data['singers'])
         audio['\xa9wrt'] = unicode(json_data['music'])
-        audio['desc'] = unicode(json_data['starring'])
-        audio['\xa9gen'] = unicode(json_data['label'])
-        # audio['cprt'] = track['copyright'].encode('utf-8')
-        # audio['disk'] = [(1, 1)]
-        # audio['trkn'] = [(int(track['track']), int(track['maxtracks']))]
+        audio['\xa9gen'] = unicode(json_data['language'])
+        audio['purl'] = unicode(json_data['album_url'])
         audio['\xa9day'] = unicode(json_data['year'])
-        # if track['explicit']:
-        #    audio['rtng'] = [(str(4))]
+        audio['\xa9cmt'] = 'starring : {}'.format(unicode(json_data['starring']))
+        audio['desc'] = parseHastags(json_data)
         cover_url = json_data['image'][:-11] + '500x500.jpg'
         fd = urllib.request.urlopen(cover_url)
         cover = MP4Cover(fd.read(), getattr(MP4Cover, 'FORMAT_PNG' if cover_url.endswith('png') else 'FORMAT_JPEG'))
         fd.close()
         audio['covr'] = [cover]
         audio.save()
+        #‘\xa9lyr’ – lyrics
     except:
         os.rename(filename, filename[:-3]+'mp3')
         filename = filename[:-3] + 'mp3'
@@ -148,6 +153,7 @@ def getHomePage():
 
 
 def downloadSongs(songs_json,location):
+    location = re.sub('[^A-Za-z0-9 ]+', ' ', location)
     des_cipher = setDecipher()
     for obj in songs_json:
         enc_url = base64.b64decode(obj['encrypted_media_url'].strip())
@@ -188,33 +194,33 @@ if __name__ == '__main__':
     q = input()
     queryresults = searchSongs(q)
     if len(queryresults['albums_json']) > 0 :
-        valid_albumIds = []
+        valid_albumIds = {}
         print('Album List')
         for album in queryresults['albums_json']:
-            valid_albumIds.append(album['id'])
+            valid_albumIds[album['id']] = album['title']
             print('Enter {} for download {} songs'.format(album['id'], album['title']))
         print('Enter x to list playlist')
 
         album_id = input()
         if album_id is not 'x':
-            if album_id in valid_albumIds:
+            if valid_albumIds[album_id] is not None:
                 songs = getAlbum(album_id)
-                downloadSongs(songs,album_id)
+                downloadSongs(songs,valid_albumIds[album_id])
             else:
                 print('Invalid album Id specified, Try again')
     else:
         print('No Album to show')
 
     if len(queryresults['playLists_json']) > 0:
-        valid_playListIds = []
+        valid_playListIds = {}
         for playList in queryresults['playLists_json']:
-            valid_playListIds.append(playList['id'])
+            valid_playListIds[playList['id']] = playList['title']
             print('Enter {} for list {} songs'.format(playList['id'], playList['title']))
 
         playList_id = input()
-        if playList_id in valid_playListIds:
+        if valid_playListIds[playList_id] is not None:
             songs = getPlayList(playList_id)
-            downloadSongs(songs, playList_id)
+            downloadSongs(songs, valid_playListIds[playList_id])
 
         else:
             print('Invalid playLists Id specified, Try again')
