@@ -15,6 +15,7 @@ import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import os
 import re
+import html
 
 # Pre Configurations
 urllib3.disable_warnings()
@@ -153,7 +154,7 @@ def getHomePage():
 
 
 def downloadSongs(songs_json,location):
-    location = re.sub('[^A-Za-z0-9 ]+', ' ', location)
+    location = re.sub('[^A-Za-z0-9 ]+', '', location)
     des_cipher = setDecipher()
     for obj in songs_json:
         enc_url = base64.b64decode(obj['encrypted_media_url'].strip())
@@ -162,6 +163,7 @@ def downloadSongs(songs_json,location):
         if os.path.exists(location) is False:
             os.mkdir(location)
         fn = pathvalidate.sanitize_filename(obj['song'])
+        fn = re.sub('[^A-Za-z0-9 ]+', '', html.unescape(fn))
         filename = location+'/'+fn + '.m4a'
         if os.path.isfile(filename):
             print('song- {} already downloaded'.format(filename))
