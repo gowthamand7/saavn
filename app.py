@@ -25,10 +25,14 @@ raw_input = input
 
 def parseHastags(json):
     return_str = ''
-    hash = json['hashtags']
-    for tags in hash:
-        return_str += tags['title']+' '
-    return return_str
+    try:
+        hash = json['hashtags']
+        for tags in hash:
+            return_str += tags['title'] + ' '
+        return return_str
+    except:
+        return return_str
+
 
 def addtags(filename, json_data):
     try:
@@ -114,7 +118,7 @@ def getPlayList(listId):
     respone = requests.get(
         'https://www.saavn.com/api.php?listid={0}&_format=json&__call=playlist.getDetails'.format(listId), verify=False)
     if respone.status_code == 200:
-        songs_json = json.loads(respone.text.splitlines()[4])
+        songs_json = json.loads(respone.text.splitlines().pop())
         songs_json = songs_json['songs']
     return songs_json
 
@@ -125,7 +129,7 @@ def getAlbum(albumId):
         'https://www.saavn.com/api.php?_format=json&__call=content.getAlbumDetails&albumid={0}'.format(albumId),
         verify=False)
     if respone.status_code == 200:
-        songs_json = json.loads(respone.text.splitlines()[5])
+        songs_json = json.loads(respone.text.splitlines().pop())
         songs_json = songs_json['songs']
     return songs_json
 
