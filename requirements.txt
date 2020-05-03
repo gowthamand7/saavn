@@ -6,3 +6,4 @@ pathlib
 requests
 pathvalidate
 mutagen
+beautifulsoup4

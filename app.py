@@ -102,7 +102,8 @@ def searchSongs(query):
     respone = requests.get(
         'https://www.saavn.com/api.php?_format=json&query={0}&__call=autocomplete.get'.format(query))
     if respone.status_code == 200:
-        respone_json = json.loads(respone.text.splitlines()[5])
+        x = respone.text.splitlines()
+        respone_json = json.loads(respone.text.splitlines()[6])
         albums_json = respone_json['albums']['data']
         songs_json = respone_json['songs']['data']
         playLists_json = respone_json['playlists']['data']
@@ -204,7 +205,7 @@ if __name__ == '__main__':
         print('Album List')
         for album in queryresults['albums_json']:
             valid_albumIds[album['id']] = album['title']
-            print('Enter {} for download {} songs'.format(album['id'], album['title']))
+            print('Enter {} for download {} songs, (description : {})'.format(album['id'], album['title'], album['description']))
         print('Enter x to list playlist')
 
         album_id = input()
